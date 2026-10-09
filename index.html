@@ -1,0 +1,423 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Arcadia-5000: Boss Fights</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Courier New', monospace;
+            background: linear-gradient(135deg, #0a0e27 0%, #1a1a3e 100%);
+            color: #00ff41;
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+
+        .game-container {
+            width: 100%;
+            max-width: 1200px;
+            background: rgba(10, 14, 39, 0.9);
+            border: 2px solid #00ff41;
+            border-radius: 10px;
+            padding: 20px;
+            box-shadow: 0 0 20px rgba(0, 255, 65, 0.3);
+        }
+
+        .title {
+            text-align: center;
+            font-size: 2.5em;
+            margin-bottom: 30px;
+            text-shadow: 0 0 10px #00ff41;
+            color: #00ff41;
+        }
+
+        .game-state {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+            margin-bottom: 20px;
+        }
+
+        .stats-panel {
+            background: rgba(0, 50, 100, 0.5);
+            border: 1px solid #0088ff;
+            padding: 15px;
+            border-radius: 5px;
+        }
+
+        .panel-title {
+            color: #0088ff;
+            font-size: 1.2em;
+            margin-bottom: 10px;
+            text-decoration: underline;
+        }
+
+        .stat-line {
+            display: flex;
+            justify-content: space-between;
+            margin: 8px 0;
+            font-size: 0.95em;
+        }
+
+        .stat-label {
+            color: #0088ff;
+        }
+
+        .stat-value {
+            color: #00ff41;
+            font-weight: bold;
+        }
+
+        .health-bar-container {
+            background: #001a33;
+            border: 1px solid #0088ff;
+            height: 25px;
+            margin: 10px 0;
+            border-radius: 3px;
+            overflow: hidden;
+            position: relative;
+        }
+
+        .health-bar {
+            height: 100%;
+            background: linear-gradient(90deg, #ff0000, #ff6600);
+            transition: width 0.3s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.8em;
+            color: white;
+            font-weight: bold;
+        }
+
+        .health-bar.critical {
+            background: linear-gradient(90deg, #ff0000, #ff0000);
+        }
+
+        .health-bar.normal {
+            background: linear-gradient(90deg, #00ff41, #00aa00);
+        }
+
+        .boss-panel {
+            background: rgba(100, 0, 0, 0.5);
+            border: 1px solid #ff0000;
+            padding: 15px;
+            border-radius: 5px;
+        }
+
+        .boss-panel .panel-title {
+            color: #ff0000;
+        }
+
+        .boss-panel .stat-label {
+            color: #ff0000;
+        }
+
+        .menu-screen {
+            text-align: center;
+        }
+
+        .menu-button {
+            background: rgba(0, 136, 255, 0.3);
+            border: 2px solid #0088ff;
+            color: #0088ff;
+            padding: 12px 30px;
+            margin: 10px;
+            font-size: 1.1em;
+            cursor: pointer;
+            border-radius: 5px;
+            font-family: 'Courier New', monospace;
+            transition: all 0.3s;
+        }
+
+        .menu-button:hover {
+            background: rgba(0, 136, 255, 0.6);
+            box-shadow: 0 0 10px #0088ff;
+        }
+
+        .menu-button:active {
+            transform: scale(0.98);
+        }
+
+        .boss-selection {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 10px;
+            margin: 20px 0;
+        }
+
+        .boss-button {
+            background: rgba(100, 0, 0, 0.3);
+            border: 2px solid #ff0000;
+            color: #ff0000;
+            padding: 10px;
+            cursor: pointer;
+            border-radius: 5px;
+            font-family: 'Courier New', monospace;
+            transition: all 0.3s;
+            font-size: 0.9em;
+        }
+
+        .boss-button:hover {
+            background: rgba(100, 0, 0, 0.6);
+            box-shadow: 0 0 10px #ff0000;
+        }
+
+        .battle-log {
+            background: rgba(0, 20, 50, 0.8);
+            border: 1px solid #0088ff;
+            padding: 15px;
+            border-radius: 5px;
+            height: 300px;
+            overflow-y: auto;
+            margin: 20px 0;
+            font-size: 0.9em;
+        }
+
+        .log-entry {
+            margin: 5px 0;
+            padding: 3px 0;
+            border-left: 3px solid #0088ff;
+            padding-left: 8px;
+        }
+
+        .log-entry.victory {
+            color: #00ff41;
+            border-left-color: #00ff41;
+        }
+
+        .log-entry.defeat {
+            color: #ff0000;
+            border-left-color: #ff0000;
+        }
+
+        .log-entry.damage {
+            color: #ff6600;
+        }
+
+        .log-entry.heal {
+            color: #00ff41;
+        }
+
+        .log-entry.special {
+            color: #ffaa00;
+            font-weight: bold;
+        }
+
+        .action-buttons {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+            gap: 10px;
+            margin: 20px 0;
+        }
+
+        .action-button {
+            background: rgba(0, 136, 255, 0.3);
+            border: 1px solid #0088ff;
+            color: #0088ff;
+            padding: 10px;
+            cursor: pointer;
+            border-radius: 5px;
+            font-family: 'Courier New', monospace;
+            transition: all 0.2s;
+            font-size: 0.9em;
+        }
+
+        .action-button:hover:not(:disabled) {
+            background: rgba(0, 136, 255, 0.6);
+            box-shadow: 0 0 8px #0088ff;
+        }
+
+        .action-button:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .action-button.cooldown {
+            background: rgba(150, 150, 150, 0.3);
+            border-color: #888888;
+            color: #888888;
+        }
+
+        .hidden {
+            display: none;
+        }
+
+        @media (max-width: 768px) {
+            .game-state {
+                grid-template-columns: 1fr;
+            }
+
+            .title {
+                font-size: 1.8em;
+            }
+
+            .action-buttons {
+                grid-template-columns: 1fr 1fr;
+            }
+        }
+
+        .victory-screen {
+            text-align: center;
+            color: #00ff41;
+        }
+
+        .victory-screen h2 {
+            font-size: 2em;
+            margin: 20px 0;
+            text-shadow: 0 0 10px #00ff41;
+        }
+
+        .defeat-screen {
+            text-align: center;
+            color: #ff0000;
+        }
+
+        .defeat-screen h2 {
+            font-size: 2em;
+            margin: 20px 0;
+            text-shadow: 0 0 10px #ff0000;
+        }
+
+        .round-counter {
+            text-align: center;
+            font-size: 1.2em;
+            color: #00ff41;
+            margin: 10px 0;
+        }
+    </style>
+</head>
+<body>
+    <div class="game-container">
+        <div class="title">⚔️ ARCADIA-5000: BOSS BATTLES ⚔️</div>
+
+        <!-- Menu Screen -->
+        <div id="menuScreen" class="menu-screen">
+            <h2 style="margin: 20px 0; color: #00ff41;">Welcome, Adventurer!</h2>
+            <p style="margin: 20px 0; color: #0088ff;">Prepare yourself for epic boss battles!</p>
+            <button class="menu-button" onclick="startGame()">START GAME</button>
+        </div>
+
+        <!-- Character Selection/Setup -->
+        <div id="characterSetup" class="menu-screen hidden">
+            <h2 style="margin: 20px 0; color: #0088ff;">Create Your Character</h2>
+            <div style="text-align: left; max-width: 300px; margin: 0 auto;">
+                <div style="margin: 15px 0;">
+                    <label for="playerName" style="color: #0088ff;">Character Name:</label><br>
+                    <input type="text" id="playerName" value="Adventurer" style="width: 100%; padding: 8px; margin-top: 5px; background: #001a33; border: 1px solid #0088ff; color: #00ff41;">
+                </div>
+            </div>
+            <button class="menu-button" onclick="createCharacter()">BEGIN ADVENTURE</button>
+        </div>
+
+        <!-- Boss Selection -->
+        <div id="bossSelection" class="menu-screen hidden">
+            <h2 style="margin: 20px 0; color: #ff0000;">Choose Your Boss</h2>
+            <div class="boss-selection">
+                <button class="boss-button" onclick="selectBoss('IceKing', 1)">❄️ Ice King<br/>(Lv. 1)</button>
+                <button class="boss-button" onclick="selectBoss('StormSorcerer', 2)">⚡ Storm Sorcerer<br/>(Lv. 2)</button>
+                <button class="boss-button" onclick="selectBoss('InfernoQueen', 3)">🔥 Inferno Queen<br/>(Lv. 3)</button>
+                <button class="boss-button" onclick="selectBoss('ShadowLord', 4)">🌑 Shadow Lord<br/>(Lv. 4)</button>
+                <button class="boss-button" onclick="selectBoss('CrystalGolem', 5)">💎 Crystal Golem<br/>(Lv. 5)</button>
+            </div>
+        </div>
+
+        <!-- Battle Screen -->
+        <div id="battleScreen" class="hidden">
+            <div class="round-counter" id="roundCounter">Round: 0</div>
+
+            <div class="game-state">
+                <!-- Player Stats -->
+                <div class="stats-panel">
+                    <div class="panel-title">🛡️ PLAYER</div>
+                    <div class="stat-line">
+                        <span class="stat-label">Name:</span>
+                        <span class="stat-value" id="playerDisplayName">Adventurer</span>
+                    </div>
+                    <div class="stat-line">
+                        <span class="stat-label">Level:</span>
+                        <span class="stat-value" id="playerLevel">1</span>
+                    </div>
+                    <div class="stat-line">
+                        <span class="stat-label">Health:</span>
+                        <span class="stat-value" id="playerHealthText">100/100</span>
+                    </div>
+                    <div class="health-bar-container">
+                        <div class="health-bar normal" id="playerHealthBar" style="width: 100%">100%</div>
+                    </div>
+                    <div class="stat-line">
+                        <span class="stat-label">Attack:</span>
+                        <span class="stat-value" id="playerAttack">10</span>
+                    </div>
+                    <div class="stat-line">
+                        <span class="stat-label">Defense:</span>
+                        <span class="stat-value" id="playerDefense">5</span>
+                    </div>
+                    <div class="stat-line">
+                        <span class="stat-label">Gold:</span>
+                        <span class="stat-value" id="playerGold">0</span>
+                    </div>
+                    <div class="stat-line">
+                        <span class="stat-label">EXP:</span>
+                        <span class="stat-value" id="playerExp">0</span>
+                    </div>
+                </div>
+
+                <!-- Boss Stats -->
+                <div class="boss-panel">
+                    <div class="panel-title">👹 BOSS</div>
+                    <div class="stat-line">
+                        <span class="stat-label">Name:</span>
+                        <span class="stat-value" id="bossName">---</span>
+                    </div>
+                    <div class="stat-line">
+                        <span class="stat-label">Level:</span>
+                        <span class="stat-value" id="bossLevel">1</span>
+                    </div>
+                    <div class="stat-line">
+                        <span class="stat-label">Health:</span>
+                        <span class="stat-value" id="bossHealthText">100/100</span>
+                    </div>
+                    <div class="health-bar-container">
+                        <div class="health-bar" id="bossHealthBar" style="width: 100%; background: linear-gradient(90deg, #ff0000, #ff0000);">100%</div>
+                    </div>
+                    <div class="stat-line">
+                        <span class="stat-label">Attack:</span>
+                        <span class="stat-value" id="bossAttack">15</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Battle Log -->
+            <div class="battle-log" id="battleLog">
+                <div class="log-entry" style="color: #ffaa00;">Battle Start...</div>
+            </div>
+
+            <!-- Action Buttons -->
+            <div class="action-buttons" id="actionButtons">
+                <button class="action-button" onclick="battleAction('attack')">⚔️ ATTACK</button>
+                <button class="action-button" onclick="battleAction('heal')">💚 HEAL</button>
+                <button class="action-button" onclick="battleAction('flee')" style="grid-column: span 2;">🏃 FLEE BATTLE</button>
+            </div>
+        </div>
+
+        <!-- End Screen -->
+        <div id="endScreen" class="menu-screen hidden">
+            <div id="endScreenContent"></div>
+            <button class="menu-button" onclick="returnToMenu()">RETURN TO MENU</button>
+        </div>
+    </div>
+
+    <script src="bossfights.js"></script>
+    <script src="game.js"></script>
+</body>
+</html>
